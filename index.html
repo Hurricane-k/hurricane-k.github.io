@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Ruikai He (Carry) — multidisciplinary researcher in camera imaging and ISP, working from Python experiments toward camera-side and edge-device prototypes.">
+    <title>Ruikai He (Carry) · Camera Imaging &amp; ISP</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #202a35;
+        --muted: #5c6875;
+        --accent: #286496;
+        --line: #e3e8ed;
+        --paper: #ffffff;
+        --rainbow-shadow:
+          0 13px 25px rgba(32, 42, 53, .07),
+          -15px 13px 25px -17px rgba(232, 142, 156, .55),
+          -5px 17px 24px -17px rgba(235, 191, 112, .43),
+          8px 17px 25px -17px rgba(130, 199, 176, .47),
+          18px 12px 26px -17px rgba(128, 176, 222, .55);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .ambient-spectrum {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 41rem;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .spectrum-glow {
+        position: absolute;
+        opacity: .9;
+        filter: blur(39px);
+        transition: transform .5s ease;
+        will-change: transform;
+      }
+      .spectrum-warm {
+        top: .9rem;
+        left: -10rem;
+        width: 42rem;
+        height: 30rem;
+        background: radial-gradient(ellipse at 30% 45%, rgba(244, 159, 166, .24), rgba(246, 205, 143, .21) 38%, transparent 72%);
+      }
+      .spectrum-middle {
+        top: 2.25rem;
+        left: 29%;
+        width: 38rem;
+        height: 30rem;
+        background: radial-gradient(ellipse, rgba(165, 214, 177, .17) 0%, rgba(168, 217, 214, .14) 38%, transparent 73%);
+      }
+      .spectrum-cool {
+        top: 1.9rem;
+        right: -9rem;
+        width: 42rem;
+        height: 32rem;
+        background: radial-gradient(ellipse at 67% 44%, rgba(168, 180, 232, .23), rgba(149, 207, 230, .2) 39%, transparent 73%);
+      }
+      .site-header, main, .site-footer { position: relative; }
+      a { color: var(--accent); text-underline-offset: 3px; }
+      a:hover { color: #164b78; }
+      a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+      .skip-link {
+        position: absolute;
+        left: 1rem;
+        top: -5rem;
+        z-index: 10;
+        padding: .5rem .75rem;
+        background: var(--paper);
+      }
+      .skip-link:focus { top: .75rem; }
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(255, 255, 255, .8);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+      .site-header::before, .site-header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, #e8a0a7 0%, #edc694 24%, #acd2a9 49%, #9acbdf 74%, #b9acd9 100%);
+        transition: opacity .3s ease;
+      }
+      .site-header::before {
+        bottom: -3px;
+        height: 10px;
+        opacity: .3;
+        filter: blur(7px);
+      }
+      .site-header::after {
+        bottom: -1px;
+        height: 3px;
+        opacity: .83;
+      }
+      .site-header:focus-within::before { opacity: .5; }
+      .site-header:focus-within::after { opacity: 1; }
+      @media (hover: hover) and (pointer: fine) {
+        .site-header:hover::before { opacity: .5; }
+        .site-header:hover::after { opacity: 1; }
+      }
+      .header-inner, .page-grid, .site-footer {
+        width: min(100% - 3rem, 1000px);
+        margin-inline: auto;
+      }
+      .header-inner {
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+      }
+      .brand {
+        color: var(--ink);
+        font: 700 1.22rem/1.2 Georgia, "Times New Roman", serif;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      nav { display: flex; flex-wrap: wrap; gap: .25rem 1.4rem; }
+      nav a {
+        color: var(--muted);
+        font-size: .9rem;
+        font-weight: 500;
+        text-decoration: none;
+      }
+      nav a:hover, nav a:focus-visible { color: var(--accent); }
+      .page-grid {
+        display: grid;
+        grid-template-columns: 250px minmax(0, 1fr);
+        gap: 3.5rem;
+        align-items: start;
+        padding-block: 3rem 4rem;
+      }
+      .profile-sidebar { position: sticky; top: 5.5rem; }
+      .main-content { min-width: 0; }
+      section { scroll-margin-top: 5.5rem; }
+      .intro {
+        text-align: center;
+      }
+      .portrait {
+        display: block;
+        width: 220px;
+        height: 220px;
+        max-width: 100%;
+        margin: 0 auto 1.1rem;
+        object-fit: cover;
+        object-position: center 25%;
+        border-radius: 12px;
+      }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 {
+        margin-bottom: .4rem;
+        font: 700 1.85rem/1.2 Georgia, "Times New Roman", serif;
+        line-height: 1.2;
+        letter-spacing: -.025em;
+      }
+      .role {
+        margin-bottom: .1rem;
+        color: var(--accent);
+        font-size: .96rem;
+        font-weight: 600;
+      }
+      .specialty, .affiliation { margin-bottom: .12rem; color: var(--muted); font-size: .88rem; }
+      .affiliation { display: flex; align-items: center; justify-content: center; gap: .35rem; }
+      .affiliation svg { display: block; flex: none; width: .95rem; height: .95rem; }
+      .profile-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .3rem .4rem;
+        margin-top: 1.15rem;
+        text-align: left;
+        font-size: .83rem;
+      }
+      .profile-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        white-space: nowrap;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .profile-links a:hover { text-decoration: underline; }
+      .profile-links svg { display: block; flex: none; width: 1.05rem; height: 1.05rem; }
+      .researchgate-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 1.05rem;
+        height: 1.05rem;
+        border: 1.5px solid currentColor;
+        border-radius: 3px;
+        font-size: .56rem;
+        font-weight: 800;
+        letter-spacing: -.06em;
+        line-height: 1;
+      }
+      .focus-panel {
+        position: relative;
+        margin-top: 1.55rem;
+        padding: 1rem 1.05rem;
+        border-radius: 8px;
+        background: #f1f5f9;
+      }
+      .focus-panel h2 {
+        margin: 0 0 .5rem;
+        padding: 0;
+        border: 0;
+        font: 700 .92rem/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .focus-panel ul { margin: 0; padding: 0; list-style: none; }
+      .focus-panel li { padding: .17rem 0; color: var(--muted); font-size: .85rem; line-height: 1.45; }
+      .content-section + .content-section { margin-top: 2.15rem; }
+      h2 {
+        margin-bottom: 1rem;
+        padding-bottom: .4rem;
+        border-bottom: 1px solid var(--line);
+        font: 700 1.65rem/1.3 Georgia, "Times New Roman", serif;
+        line-height: 1.35;
+        letter-spacing: -.01em;
+      }
+      .about-copy { max-width: 72ch; margin-bottom: 0; }
+      .about-copy + .about-copy { margin-top: .9rem; }
+      .research-diagram { margin: 1.5rem 0 0; }
+      .research-diagram figcaption { margin-bottom: .55rem; font-weight: 600; }
+      .research-diagram img { display: block; width: 100%; height: auto; margin-block: -8%; }
+      .research-diagram a { display: block; }
+      .research-diagram .image-link { margin-top: .25rem; font-size: .82rem; }
+      .research-diagram .image-link a { display: inline; }
+      .experience-entry { display: grid; grid-template-columns: 11rem minmax(0, 1fr) 5rem; gap: .4rem; align-items: center; min-height: 70px; }
+      .experience-entry .years { color: var(--muted); font-size: .92rem; }
+      .experience-entry h3 { margin: 0; font-size: 1rem; line-height: 1.5; }
+      .experience-entry p { margin: .1rem 0 0; color: var(--muted); font-size: .9rem; }
+      .affiliation-logo { display: block; justify-self: end; width: 70px; height: 70px; object-fit: contain; }
+      .affiliation-logo--polyu { width: 72px; object-fit: cover; object-position: left center; }
+      .publication-list, .news-list, .education-list, .award-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .publication {
+        position: relative;
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        gap: 1.15rem;
+        align-items: start;
+        padding: 1rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .publication + .publication { margin-top: .85rem; }
+      .publication[hidden], .publication-toggle[hidden] { display: none; }
+      .publication img {
+        display: block;
+        width: 112px;
+        height: 80px;
+        object-fit: contain;
+        background: #f6f8fa;
+        border: 1px solid var(--line);
+      }
+      .publication h3 {
+        margin: -.15rem 0 .15rem;
+        font-size: 1rem;
+        line-height: 1.42;
+      }
+      .publication h3 a { color: var(--ink); text-decoration: none; }
+      .publication h3 a:hover { color: var(--accent); text-decoration: underline; }
+      .pub-meta { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.5; }
+      .pub-links { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: .28rem; font-size: .88rem; }
+      .pub-links a { font-weight: 600; text-decoration: none; }
+      .pub-links a:hover { text-decoration: underline; }
+      .publication-toggle {
+        display: block;
+        width: min(100%, 22rem);
+        margin: 1.25rem auto 0;
+        padding: .8rem 1.2rem;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #f6f8fa;
+        color: var(--ink);
+        font: inherit;
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: .15em;
+        cursor: pointer;
+      }
+      .publication-toggle:hover { border-color: var(--accent); color: var(--accent); }
+      .publication-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+      .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+      .project-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: 1.1rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .project-card-featured { grid-column: 1 / -1; border-color: #a9c8e1; background: #f8fbfd; }
+      .project-card h3 { margin: 0 0 .45rem; font-size: 1rem; line-height: 1.4; }
+      .project-card h3 a { text-decoration: none; }
+      .project-card h3 a:hover { text-decoration: underline; }
+      .project-card p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }
+      .project-card .project-meta { margin-top: auto; padding-top: .85rem; font-size: .8rem; font-weight: 600; }
+      .project-meta span { margin-inline: .35rem; }
+      .focus-panel::before, .publication::before, .project-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 3px;
+        border-radius: 8px 8px 0 0;
+        background: linear-gradient(90deg, #e8a0a7 0%, #edc694 24%, #acd2a9 49%, #9acbdf 74%, #b9acd9 100%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s ease;
+      }
+      .focus-panel, .publication, .project-card, .publication-toggle {
+        transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+      }
+      .publication:focus-within, .project-card:focus-within {
+        border-color: #d1d8e8;
+        box-shadow: var(--rainbow-shadow);
+      }
+      .publication:focus-within::before, .project-card:focus-within::before { opacity: 1; }
+      @media (hover: hover) and (pointer: fine) {
+        .focus-panel:hover, .publication:hover, .project-card:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--rainbow-shadow);
+        }
+        .focus-panel:hover::before, .publication:hover::before, .project-card:hover::before { opacity: 1; }
+        .publication:hover, .project-card:hover { border-color: #d1d8e8; }
+        .publication-toggle:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--rainbow-shadow);
+        }
+      }
+      .news-list li, .education-list li { padding: .24rem 0; }
+      .news-list time {
+        display: inline-block;
+        min-width: 6.3rem;
+        color: var(--muted);
+        font-size: .92rem;
+        font-weight: 600;
+      }
+      .education-list li {
+        display: grid;
+        grid-template-columns: 11rem minmax(0, 1fr) 5rem;
+        gap: .4rem;
+        align-items: center;
+        min-height: 78px;
+      }
+      .education-list .years { color: var(--muted); font-size: .92rem; }
+      .education-list strong { font-weight: 600; }
+      .education-list small { display: block; color: var(--muted); font-size: .88rem; }
+      .award-list li { display: grid; grid-template-columns: 6.3rem minmax(0, 1fr); gap: .25rem; padding: .3rem 0; }
+      .award-list time { color: var(--muted); font-size: .9rem; font-weight: 600; }
+      .award-list strong { font-weight: 600; }
+      .site-footer {
+        padding: 1.3rem 0 2rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: .83rem;
+      }
+      @media (max-width: 820px) {
+        .page-grid { grid-template-columns: 1fr; gap: 2.6rem; }
+        .profile-sidebar { position: static; width: min(100%, 440px); margin-inline: auto; }
+        .profile-links { width: min(100%, 290px); margin-inline: auto; }
+      }
+      @media (max-width: 620px) {
+        .header-inner, .page-grid, .site-footer { width: min(100% - 2rem, 1000px); }
+        .header-inner { align-items: flex-start; flex-direction: column; gap: .15rem; padding-block: .8rem; }
+        nav { gap: .15rem 1rem; }
+        .page-grid { padding-block: 1.8rem 3rem; }
+        .portrait { width: 190px; height: 190px; }
+        h1 { font-size: 1.9rem; }
+        .publication { grid-template-columns: 76px minmax(0, 1fr); gap: .8rem; }
+        .publication img { width: 76px; height: 62px; }
+        .project-grid { grid-template-columns: 1fr; }
+        .experience-entry, .education-list li { grid-template-columns: minmax(0, 1fr) 70px; gap: .2rem .75rem; }
+        .experience-entry .years, .education-list .years { grid-column: 1 / -1; }
+        .affiliation-logo { width: 58px; height: 58px; }
+        .affiliation-logo--polyu { width: 60px; }
+        .education-list li { padding-block: .4rem; }
+        .award-list li { grid-template-columns: 1fr; gap: 0; padding-block: .45rem; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .site-header::before, .site-header::after { transition: none; }
+        .spectrum-glow, .focus-panel::before, .publication::before, .project-card::before { transition: none; }
+        .focus-panel, .publication, .project-card, .publication-toggle { transition: none; }
+        .focus-panel:hover, .publication:hover, .project-card:hover, .publication-toggle:hover { transform: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="ambient-spectrum" aria-hidden="true">
+      <span class="spectrum-glow spectrum-warm"></span>
+      <span class="spectrum-glow spectrum-middle"></span>
+      <span class="spectrum-glow spectrum-cool"></span>
+    </div>
+    <header class="site-header" id="top">
+      <div class="header-inner">
+        <a class="brand" href="#top">Ruikai He</a>
+        <nav aria-label="Main navigation">
+          <a href="#about">About</a>
+          <a href="#experience">Experience</a>
+          <a href="#education">Education</a>
+          <a href="#publications">Publications</a>
+          <a href="#projects">Projects</a>
+          <a href="#news">News</a>
+          <a href="#awards">Awards</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="page-grid">
+        <aside class="profile-sidebar" aria-label="Profile">
+          <section class="intro" aria-labelledby="page-title">
+            <img class="portrait" src="assets/ProfileImage.jpg" alt="Portrait of Ruikai He" width="220" height="220">
+            <h1 id="page-title">Ruikai He <span style="font-weight: 400; color: var(--muted);">(Carry)</span></h1>
+            <p class="role">Multidisciplinary Researcher</p>
+            <p class="specialty">Camera Imaging &amp; ISP</p>
+            <p class="affiliation"><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7.5 7.5 0 0 0-7.5 7.5C4.5 15.2 12 22 12 22s7.5-6.8 7.5-12.5A7.5 7.5 0 0 0 12 2Zm0 10.1a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z" fill-rule="evenodd"/></svg>Hong Kong SAR</p>
+        <div class="profile-links" aria-label="Profiles and contact">
+          <a href="mailto:carry.he@connect.polyu.hk"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3.5 6 8.5 6.5L20.5 6"/></svg>Email</a>
+          <a href="https://scholar.google.com/citations?user=YSQtIuQAAAAJ&amp;hl=en"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 9 10-5 10 5-10 5L2 9Z"/><path d="M6 11v5c3.3 2.7 8.7 2.7 12 0v-5M22 9v6"/></svg>Google Scholar</a>
+          <a href="https://github.com/Hurricane-k"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.23.48-2.69-1.08-2.69-1.08-.36-.92-.88-1.17-.88-1.17-.73-.5.06-.49.06-.49.81.06 1.24.83 1.24.83.72 1.23 1.89.87 2.35.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 4.73c.68 0 1.36.09 2 .27 1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.55.73.55 1.48 0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+          <a href="https://www.linkedin.com/in/rk-h/"><svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor"><path d="M1.146 0C.513 0 0 .5 0 1.125v13.75C0 15.5.513 16 1.146 16h13.708c.633 0 1.146-.5 1.146-1.125V1.125C16 .5 15.487 0 14.854 0H1.146zM4.943 13.5H2.542V6.169h2.401V13.5zM3.743 5.168a1.39 1.39 0 1 1 0-2.78 1.39 1.39 0 0 1 0 2.78zm9.757 8.332h-2.4V9.936c0-.85-.017-1.945-1.187-1.945-1.188 0-1.37.927-1.37 1.884V13.5h-2.4V6.169h2.304v1.002h.033c.32-.606 1.103-1.246 2.27-1.246 2.428 0 2.75 1.598 2.75 3.676V13.5z"/></svg>LinkedIn</a>
+          <a href="https://www.researchgate.net/profile/Ruikai-He"><span class="researchgate-icon" aria-hidden="true">RG</span>ResearchGate</a>
+          <a href="assets/HE,%20RK_Resume_Camera_ISP_Computational_Photography.pdf" download="Ruikai_He_CV.pdf" aria-label="Download CV (PDF)"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 18v3h16v-3"/></svg>CV</a>
+        </div>
+          </section>
+          <section class="focus-panel" aria-labelledby="focus-title">
+            <h2 id="focus-title">Research Interests</h2>
+            <ul>
+              <li>Camera ISP &amp; Color Science</li>
+              <li>Computational Color Constancy</li>
+              <li>Multi-Camera Color Consistency</li>
+              <li>Tone Mapping</li>
+              <li>RAW/DNG Processing</li>
+              <li>AI-assisted Prototyping</li>
+            </ul>
+          </section>
+        </aside>
+
+        <div class="main-content">
+
+      <section class="content-section" id="about" aria-labelledby="about-title">
+        <h2 id="about-title">About</h2>
+        <p class="about-copy">I am a Research Associate at <a href="https://www.polyu.edu.hk/">The Hong Kong Polytechnic University</a>, advised by <a href="https://www.polyucolorlab.com/pi.html">Prof. Minchen Wei</a>. My work focuses on <strong>camera-side image processing</strong>, especially tone mapping and computational color constancy. I build deep-learning prototypes in Python and PyTorch and use AI-assisted workflows to explore their path toward edge-device deployment.</p>
+        <p class="about-copy">For my Ph.D. studies in Color Imaging, I <strong>pivoted from HVAC engineering to color science and image processing</strong>, building this new research foundation from the ground up. My research spans computational color constancy, cross-camera color consistency (color matching), and tone mapping. Working with RAW/DNG images has helped me connect algorithms to practical camera imaging pipelines.</p>
+        <p class="about-copy">Before imaging, I studied HVAC engineering at <a href="https://en.tongji.edu.cn/">Tongji University</a> with <a href="https://scholar.google.com/citations?user=ks4Pq7UAAAAJ&amp;hl=en">Prof. Peng Xu</a>. My training covered <strong>building energy simulation and audits</strong>, HVAC system control, automated system design, and fault detection and diagnosis.</p>
+        <figure class="research-diagram">
+          <figcaption>My research transition</figcaption>
+          <a href="assets/researchtransit-transparent.png" aria-label="View the research transition diagram at full size">
+            <img src="assets/researchtransit-transparent.png" alt="Research transition from HVAC, including building energy simulation and system control, to color imaging, including color constancy, cross-camera consistency, and tone mapping." width="1672" height="941" loading="lazy">
+          </a>
+          <p class="image-link"><a href="assets/researchtransit-transparent.png">View full-size diagram</a></p>
+        </figure>
+      </section>
+
+      <section class="content-section" id="experience" aria-labelledby="experience-title">
+        <h2 id="experience-title">Work Experience</h2>
+        <div class="experience-entry">
+          <time class="years" datetime="2025-09">Sep 2025–Present</time>
+          <div>
+            <h3>Research Associate</h3>
+            <p><a href="https://www.polyu.edu.hk/">PolyU</a> <a href="https://www.polyucolorlab.com/">Color, Imaging and Illumination Laboratory</a></p>
+          </div>
+          <img class="affiliation-logo affiliation-logo--polyu" src="logo/polyu-logo.png" alt="" width="72" height="70" decoding="async">
+        </div>
+      </section>
+
+      <section class="content-section" id="education" aria-labelledby="education-title">
+        <h2 id="education-title">Education</h2>
+        <ul class="education-list">
+          <li>
+            <span class="years">Sep 2022–Nov 2026</span>
+            <span><strong>Ph.D., The Hong Kong Polytechnic University</strong><small>Hong Kong · Supervisor: Prof. Minchen Wei</small></span>
+            <img class="affiliation-logo affiliation-logo--polyu" src="logo/polyu-logo.png" alt="" width="72" height="70" decoding="async">
+          </li>
+          <li>
+            <span class="years">Sep 2019–Mar 2022</span>
+            <span><strong>Master's, Tongji University</strong><small>Shanghai, China · Supervisor: Prof. Peng Xu</small></span>
+            <img class="affiliation-logo" src="logo/tongji-logo.png" alt="" width="70" height="70" decoding="async">
+          </li>
+        </ul>
+      </section>
+
+      <section class="content-section" id="publications" aria-labelledby="publications-title">
+        <h2 id="publications-title">Selected Publications</h2>
+        <ol class="publication-list" id="publication-list">
+          <li class="publication">
+            <img src="assets/cover_angular_error_metric.png" alt="Figure illustrating white balance evaluation" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://onlinelibrary.wiley.com/doi/10.1002/col.70084">Beyond Angular Error: Rethinking Metric for White Balance and Its Effect on Image Color Appearance</a></h3>
+              <p class="pub-meta">Minchen Wei, <strong>Ruikai He</strong>, and Jinzhao Yue · <em>Color Research &amp; Application</em>, 2026</p>
+              <div class="pub-links"><a href="https://onlinelibrary.wiley.com/doi/10.1002/col.70084">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_ALS_illuminant.png" alt="Figure illustrating RGB images and ambient light sensor data" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://library.imaging.org/admin/apis/public/api/ist/website/downloadArticle/cic/33/1/16">Integration of RGB Image and ALS for Color Constancy</a></h3>
+              <p class="pub-meta"><strong>Ruikai He</strong> and Minchen Wei · <em>Color and Imaging Conference</em>, 2025</p>
+              <div class="pub-links">
+                <a href="https://library.imaging.org/admin/apis/public/api/ist/website/downloadArticle/cic/33/1/16">Paper ↗</a>
+                <a href="https://github.com/Hurricane-k/Demo-ALS4IllumEstimation">Code ↗</a>
+              </div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_white_point_alignment.png" alt="Figure comparing colour across cameras" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://opg.optica.org/josaa/abstract.cfm?uri=josaa-42-5-690">Color correction for multi-camera systems: aligning white points</a></h3>
+              <p class="pub-meta"><strong>Ruikai He</strong>, Minchen Wei, Xinchao Qu, and Tao Hu · <em>Journal of the Optical Society of America A</em>, 2025</p>
+              <div class="pub-links">
+                <a href="https://opg.optica.org/josaa/abstract.cfm?uri=josaa-42-5-690">Paper ↗</a>
+                <a href="https://github.com/Hurricane-k/Demo-AlignWhitePoints">Code ↗</a>
+              </div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_data_cleansing.jpg" alt="Cover image for chiller-room data preprocessing research" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.enbuild.2022.112372">A rule-based data preprocessing framework for chiller rooms inspired by the analysis of engineering big data</a></h3>
+              <p class="pub-meta"><strong>Ruikai He</strong>, Tong Xiao, Shunian Qiu, Jiefan Gu, Minchen Wei, and Peng Xu · <em>Energy and Buildings</em>, 2022</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.enbuild.2022.112372">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_hot_water_pipes.jpg" alt="Cover image for infrared diagnosis of hot water pipes" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.buildenv.2022.109111">Automatic fault diagnosis algorithm for hot water pipes based on infrared thermal images</a></h3>
+              <p class="pub-meta">Hang Guan, Tong Xiao, Wei Luo, Jiefan Gu, <strong>Ruikai He</strong>, and Peng Xu · <em>Building and Environment</em>, 2022</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.buildenv.2022.109111">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_chilled_water_flowmeter.jpg" alt="Cover image for chilled water flowmeter fault detection" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1080/23744731.2022.2043068">User-friendly fault detection method for building chilled water flowmeters: Field data validation</a></h3>
+              <p class="pub-meta">Shunian Qiu, Zhenhai Li, <strong>Ruikai He</strong>, and Zhengwei Li · <em>Science and Technology for the Built Environment</em>, 2022</p>
+              <div class="pub-links"><a href="https://doi.org/10.1080/23744731.2022.2043068">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_chilled_water_temperature.jpg" alt="Cover image for chilled water temperature control research" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.enbuild.2021.111694">Chilled water temperature resetting using model-free reinforcement learning: Engineering application</a></h3>
+              <p class="pub-meta">Shunian Qiu, Zhenhai Li, Dalian Fan, <strong>Ruikai He</strong>, Xinghui Dai, and Zhengwei Li · <em>Energy and Buildings</em>, 2022</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.enbuild.2021.111694">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_building_energy_prediction.jpg" alt="Cover image for building energy prediction research" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.apenergy.2021.117829">Status quo and opportunities for building energy prediction in limited data Context—Overview from a competition</a></h3>
+              <p class="pub-meta">Tong Xiao, Peng Xu, <strong>Ruikai He</strong>, and Huajing Sha · <em>Applied Energy</em>, 2022</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.apenergy.2021.117829">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_residential_load.jpg" alt="Chart showing residential electricity demand and the evening peak" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.scs.2021.103530">Multi-objective residential load scheduling approach for demand response in smart grid</a></h3>
+              <p class="pub-meta">Zhe Chen, Yongbao Chen, <strong>Ruikai He</strong>, Jingnan Liu, Ming Gao, and Lixin Zhang · <em>Sustainable Cities and Society</em>, 2022</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.scs.2021.103530">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_chiller_model.png" alt="Cover image for data-driven chiller modeling research" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1088/1742-6596/2006/1/012002">How does the control logic influence the establishment of a data-driven chiller model?</a></h3>
+              <p class="pub-meta">Shunian Qiu, Zhenhai Li, <strong>Ruikai He</strong>, Jiajie Li, and Zhengwei Li · <em>Journal of Physics: Conference Series</em>, 2021</p>
+              <div class="pub-links"><a href="https://doi.org/10.1088/1742-6596/2006/1/012002">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_fault_detect_diagnoise.jpg" alt="Cover image for water distribution fault detection research" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.enbuild.2021.110967">A non-intrusive approach for fault detection and diagnosis of water distribution systems based on image sensors, audio sensors and an inspection robot</a></h3>
+              <p class="pub-meta"><strong>Ruikai He</strong>, Peng Xu, Zhibo Chen, Wei Luo, Zhineng Su, and Jiong Mao · <em>Energy and Buildings</em>, 2021</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.enbuild.2021.110967">Paper ↗</a></div>
+            </div>
+          </li>
+          <li class="publication">
+            <img src="assets/cover_covid_HVAC.jpg" alt="Diagram of airborne droplet movement in an indoor space" width="112" height="80" loading="lazy">
+            <div>
+              <h3><a href="https://doi.org/10.1016/j.buildenv.2020.107368">Review and comparison of HVAC operation guidelines in different countries during the COVID-19 pandemic</a></h3>
+              <p class="pub-meta">Mingyue Guo, Peng Xu, Tong Xiao, <strong>Ruikai He</strong>, Mingkun Dai, and Shelly L. Miller · <em>Building and Environment</em>, 2021</p>
+              <div class="pub-links"><a href="https://doi.org/10.1016/j.buildenv.2020.107368">Paper ↗</a></div>
+            </div>
+          </li>
+        </ol>
+        <button class="publication-toggle" id="publication-toggle" type="button" aria-controls="publication-list" aria-expanded="false" hidden>
+          <span class="publication-toggle-label">View All Publications</span> <span class="publication-toggle-arrow" aria-hidden="true">→</span>
+        </button>
+      </section>
+
+      <section class="content-section" id="projects" aria-labelledby="projects-title">
+        <h2 id="projects-title">GitHub Projects</h2>
+        <div class="project-grid">
+          <article class="project-card project-card-featured">
+            <h3><a href="https://github.com/Hurricane-k/Replay-DoItYourselfHSIwithDigitalCamera">Do-It-Yourself Hyperspectral Imaging ↗</a></h3>
+            <p>A MATLAB reproduction of a CVPR 2016 method for recovering hyperspectral images with everyday digital cameras.</p>
+            <p class="project-meta">Paper reproduction <span aria-hidden="true">·</span> MATLAB</p>
+          </article>
+          <article class="project-card">
+            <h3><a href="https://github.com/Hurricane-k/Replay-EdgeBasedColorConstancy">Edge-Based Color Constancy ↗</a></h3>
+            <p>A Python reproduction of Shades of Grey and first- and second-order Grey-Edge methods for illuminant estimation.</p>
+            <p class="project-meta">Paper reproduction <span aria-hidden="true">·</span> Python</p>
+          </article>
+          <article class="project-card">
+            <h3><a href="https://github.com/Hurricane-k/Rethink-2DLUTColorTransform">2D LUT Camera Color Correction ↗</a></h3>
+            <p>A Python notebook exploring two-dimensional color transforms and the limits of a linear 3 × 3 color matrix.</p>
+            <p class="project-meta">Paper exploration <span aria-hidden="true">·</span> Python notebook</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section" id="news" aria-labelledby="news-title">
+        <h2 id="news-title">News</h2>
+        <ul class="news-list">
+          <li><time datetime="2026-09">Sep 2026</time> Successfully completed my Ph.D. oral examination.</li>
+          <li><time datetime="2025-10">Oct 2025</time> Delivered an oral presentation at <a href="https://www.imaging.org/IST/IST/Conferences/CIC/CIC2025/CIC_Home.aspx">CIC 2025</a>.</li>
+        </ul>
+      </section>
+
+      <section class="content-section" id="awards" aria-labelledby="awards-title">
+        <h2 id="awards-title">Awards</h2>
+        <ul class="award-list">
+          <li><time datetime="2022-04">Apr 2022</time><span><strong>Outstanding Graduate</strong>, Tongji University</span></li>
+          <li><time datetime="2021-10">Oct 2021</time><span><strong>Outstanding Student of Tongji University</strong>, Academic Year 2021–2022</span></li>
+          <li><time datetime="2021-10">Oct 2021</time><span><strong>National Fellowship for Postgraduate Students</strong></span></li>
+        </ul>
+      </section>
+
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">© 2026 Ruikai He</footer>
+    <script>
+      const spectrumGlows = document.querySelectorAll('.spectrum-glow');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+      let spectrumFrame = 0;
+
+      window.addEventListener('pointermove', event => {
+        if (!finePointer.matches || reducedMotion.matches || spectrumFrame) return;
+        const x = event.clientX / window.innerWidth - .5;
+        const y = event.clientY / window.innerHeight - .5;
+        spectrumFrame = window.requestAnimationFrame(() => {
+          spectrumGlows[0].style.transform = `translate(${(x * 42).toFixed(1)}px, ${(y * 30).toFixed(1)}px)`;
+          spectrumGlows[1].style.transform = `translate(${(x * 18).toFixed(1)}px, ${(-y * 19).toFixed(1)}px)`;
+          spectrumGlows[2].style.transform = `translate(${(-x * 35).toFixed(1)}px, ${(-y * 26).toFixed(1)}px)`;
+          spectrumFrame = 0;
+        });
+      }, { passive: true });
+
+      const publicationList = document.getElementById('publication-list');
+      const publicationToggle = document.getElementById('publication-toggle');
+      const additionalPublications = Array.from(publicationList.children).slice(3);
+
+      if (additionalPublications.length > 0) {
+        additionalPublications.forEach(publication => { publication.hidden = true; });
+        publicationToggle.hidden = false;
+
+        publicationToggle.addEventListener('click', () => {
+          const expanded = publicationToggle.getAttribute('aria-expanded') === 'true';
+          additionalPublications.forEach(publication => { publication.hidden = expanded; });
+          publicationToggle.setAttribute('aria-expanded', String(!expanded));
+          publicationToggle.querySelector('.publication-toggle-label').textContent = expanded ? 'View All Publications' : 'Show Fewer Publications';
+          publicationToggle.querySelector('.publication-toggle-arrow').textContent = expanded ? '→' : '↑';
+        });
+      }
+    </script>
+  </body>
+</html>
